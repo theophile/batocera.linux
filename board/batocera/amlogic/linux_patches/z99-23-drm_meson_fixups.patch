@@ -1,0 +1,169 @@
+From 39285741ad54c726c781b23a9638ef86df6aef86 Mon Sep 17 00:00:00 2001
+From: Stuart Menefy <stuart.menefy@mathembedded.com>
+Date: Thu, 8 Sep 2022 16:52:43 +0100
+Subject: [PATCH 1/5] drm/meson: Fix OSD1 RGB to YCbCr coefficient
+
+VPP_WRAP_OSD1_MATRIX_COEF22.Coeff22 is documented as being bits 0-12,
+not 16-28.
+
+Without this the output tends to have a pink hue, changing it results
+in better color accuracy.
+
+The vendor kernel doesn't use this register. However the code which
+sets VIU2_OSD1_MATRIX_COEF22 also uses bits 0-12. There is a slightly
+different style of registers for configuring some of the other matrices,
+which do use bits 16-28 for this coefficient, but those have names
+ending in MATRIX_COEF22_30, and this is not one of those.
+
+Signed-off-by: Stuart Menefy <stuart.menefy@mathembedded.com>
+Fixes: 728883948b0d ("drm/meson: Add G12A Support for VIU setup")
+Reviewed-by: Neil Armstrong <narmstrong@baylibre.com>
+---
+ drivers/gpu/drm/meson/meson_viu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/meson/meson_viu.c b/drivers/gpu/drm/meson/meson_viu.c
+index 259f3e6bec90a..1daec5dbd46b0 100644
+--- a/drivers/gpu/drm/meson/meson_viu.c
++++ b/drivers/gpu/drm/meson/meson_viu.c
+@@ -94,7 +94,7 @@ static void meson_viu_set_g12a_osd1_matrix(struct meson_drm *priv,
+ 		priv->io_base + _REG(VPP_WRAP_OSD1_MATRIX_COEF11_12));
+ 	writel(((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff),
+ 		priv->io_base + _REG(VPP_WRAP_OSD1_MATRIX_COEF20_21));
+-	writel((m[11] & 0x1fff) << 16,
++	writel((m[11] & 0x1fff),
+ 		priv->io_base +	_REG(VPP_WRAP_OSD1_MATRIX_COEF22));
+ 
+ 	writel(((m[18] & 0xfff) << 16) | (m[19] & 0xfff),
+
+From 40de5365b73e90324587947e3c0adb089d7135b0 Mon Sep 17 00:00:00 2001
+From: Stuart Menefy <stuart.menefy@mathembedded.com>
+Date: Thu, 8 Sep 2022 16:51:03 +0100
+Subject: [PATCH 2/5] drm/meson: Correct OSD1 global alpha value
+
+VIU_OSD1_CTRL_STAT.GLOBAL_ALPHA is a 9 bit field, so the maximum
+value is 0x100 not 0xff.
+
+This matches the vendor kernel.
+
+Signed-off-by: Stuart Menefy <stuart.menefy@mathembedded.com>
+Fixes: bbbe775ec5b5 ("drm: Add support for Amlogic Meson Graphic Controller")
+Reviewed-by: Neil Armstrong <narmstrong@baylibre.com>
+---
+ drivers/gpu/drm/meson/meson_plane.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/meson/meson_plane.c b/drivers/gpu/drm/meson/meson_plane.c
+index 35338ed182099..255c6b863f8d2 100644
+--- a/drivers/gpu/drm/meson/meson_plane.c
++++ b/drivers/gpu/drm/meson/meson_plane.c
+@@ -163,7 +163,7 @@ static void meson_plane_atomic_update(struct drm_plane *plane,
+ 
+ 	/* Enable OSD and BLK0, set max global alpha */
+ 	priv->viu.osd1_ctrl_stat = OSD_ENABLE |
+-				   (0xFF << OSD_GLOBAL_ALPHA_SHIFT) |
++				   (0x100 << OSD_GLOBAL_ALPHA_SHIFT) |
+ 				   OSD_BLK0_ENABLE;
+ 
+ 	priv->viu.osd1_ctrl_stat2 = readl(priv->io_base +
+
+From 949695af508b96a47a1f8bb29312c9f7a0b0fc23 Mon Sep 17 00:00:00 2001
+From: Steev Klimaszewski <steev@kali.org>
+Date: Mon, 19 Sep 2022 22:56:24 -0500
+Subject: [PATCH 3/5] drm/bridge: dw-hdmi: Set RGB as default
+
+Signed-off-by: Steev Klimaszewski <steev@kali.org>
+---
+ drivers/gpu/drm/bridge/synopsys/dw-hdmi.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+index 0c79a9ba48bb6..d20f985044632 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+@@ -2600,6 +2600,9 @@ static u32 *dw_hdmi_bridge_atomic_get_output_bus_fmts(struct drm_bridge *bridge,
+ 	 * if supported. In any case the default RGB888 format is added
+ 	 */
+ 
++	/* Default 8bit RGB fallback */
++	output_fmts[i++] = MEDIA_BUS_FMT_RGB888_1X24;
++
+ 	if (max_bpc >= 16 && info->bpc == 16) {
+ 		if (info->color_formats & DRM_COLOR_FORMAT_YCRCB444)
+ 			output_fmts[i++] = MEDIA_BUS_FMT_YUV16_1X48;
+@@ -2633,9 +2636,6 @@ static u32 *dw_hdmi_bridge_atomic_get_output_bus_fmts(struct drm_bridge *bridge,
+ 	if (info->color_formats & DRM_COLOR_FORMAT_YCRCB444)
+ 		output_fmts[i++] = MEDIA_BUS_FMT_YUV8_1X24;
+ 
+-	/* Default 8bit RGB fallback */
+-	output_fmts[i++] = MEDIA_BUS_FMT_RGB888_1X24;
+-
+ 	*num_output_fmts = i;
+ 
+ 	return output_fmts;
+
+From 41852400cb62c64767d84f94c2632ed7836a2a5b Mon Sep 17 00:00:00 2001
+From: Steev Klimaszewski <steev@kali.org>
+Date: Thu, 15 Sep 2022 12:41:45 -0500
+Subject: [PATCH 4/5] drm/meson: venc: add support for Waveshare HDMI
+
+The Waveshare 7.9" display is 400x1280, additionaly, they have a 5.5"
+AMOLED display that is 1080x1920, so make the lower h bounds 384 which
+is what the 7.9" EDID says is the lowest resolution it can do.
+Additionally, since the 5.5" is 1080x1920, make the upper v bounds be
+1920.
+
+Signed-off-by: Steev Klimaszewski <steev@kali.org>
+---
+ drivers/gpu/drm/meson/meson_venc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/meson/meson_venc.c b/drivers/gpu/drm/meson/meson_venc.c
+index f93c725b6f02d..e1c42ee1751c9 100644
+--- a/drivers/gpu/drm/meson/meson_venc.c
++++ b/drivers/gpu/drm/meson/meson_venc.c
+@@ -866,10 +866,10 @@ meson_venc_hdmi_supported_mode(const struct drm_display_mode *mode)
+ 			    DRM_MODE_FLAG_PVSYNC | DRM_MODE_FLAG_NVSYNC))
+ 		return MODE_BAD;
+ 
+-	if (mode->hdisplay < 640 || mode->hdisplay > 1920)
++	if (mode->hdisplay < 384 || mode->hdisplay > 1920)
+ 		return MODE_BAD_HVALUE;
+ 
+-	if (mode->vdisplay < 480 || mode->vdisplay > 1200)
++	if (mode->vdisplay < 384 || mode->vdisplay > 1920)
+ 		return MODE_BAD_VVALUE;
+ 
+ 	return MODE_OK;
+
+From d6eaaccde39ceff7c314ca4920f165011975c5c1 Mon Sep 17 00:00:00 2001
+From: Steev Klimaszewski <steev@kali.org>
+Date: Tue, 20 Sep 2022 12:59:49 -0500
+Subject: [PATCH 5/5] drm/meson: Hold fewer lines after vsync
+
+On newer SoCs we need to hold more lines for AFBC support. See commit
+24e0d40 ("drm/meson: hold 32 lines after vsync to give time for
+AFBC start") for an in-depth explanation.
+
+However, for some reason, this causes other side effects like screen
+tearing every so often.  Endless' 3.10 kernel has this lowered to 12,
+however, locally I needed to go back to the original 4.
+
+Signed-off-by: Steev Klimaszewski <steev@kali.org>
+---
+ drivers/gpu/drm/meson/meson_viu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/meson/meson_viu.c b/drivers/gpu/drm/meson/meson_viu.c
+index 1daec5dbd46b0..05ba2086a5a2b 100644
+--- a/drivers/gpu/drm/meson/meson_viu.c
++++ b/drivers/gpu/drm/meson/meson_viu.c
+@@ -436,7 +436,7 @@ void meson_viu_init(struct meson_drm *priv)
+ 
+ 	/* Initialize OSD1 fifo control register */
+ 	reg = VIU_OSD_DDR_PRIORITY_URGENT |
+-		VIU_OSD_HOLD_FIFO_LINES(31) |
++		VIU_OSD_HOLD_FIFO_LINES(4) |
+ 		VIU_OSD_FIFO_DEPTH_VAL(32) | /* fifo_depth_val: 32*8=256 */
+ 		VIU_OSD_WORDS_PER_BURST(4) | /* 4 words in 1 burst */
+ 		VIU_OSD_FIFO_LIMITS(2);      /* fifo_lim: 2*16=32 */

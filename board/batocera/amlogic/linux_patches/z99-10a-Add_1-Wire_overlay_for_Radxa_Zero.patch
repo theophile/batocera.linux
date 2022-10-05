@@ -1,0 +1,14 @@
+diff --git a/arch/arm64/boot/dts/amlogic/overlay/Makefile b/arch/arm64/boot/dts/amlogic/overlay/Makefile
+index 5cfec2d2b1..132b35559a 100644
+--- a/arch/arm64/boot/dts/amlogic/overlay/Makefile
++++ b/arch/arm64/boot/dts/amlogic/overlay/Makefile
+@@ -9,7 +9,8 @@ dtbo-$(CONFIG_ARCH_MESON) += \
+ 	meson-g12a-spi-spidev.dtbo \
+ 	meson-g12a-uart-ao-b-on-gpioao-2-gpioao-3.dtbo \
+ 	meson-g12a-uart-ao-b-on-gpioao-8-gpioao-9.dtbo \
+-	meson-g12a-uart-ee-c.dtbo
++	meson-g12a-uart-ee-c.dtbo \
++	meson-g12a-w1-gpioao-3.dtbo
+ 
+ scr-$(CONFIG_ARCH_MESON) += \
+ 	meson-fixup.scr

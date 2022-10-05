@@ -1,0 +1,25 @@
+From 57a25a2f2f476f98a9a98115853b29f10b086f77 Mon Sep 17 00:00:00 2001
+From: Yuntian Zhang <yt@radxa.com>
+Date: Fri, 11 Mar 2022 19:46:47 +0800
+Subject: [PATCH] arm64: dts: meson: Reduce Wi-Fi SDIO frequency
+
+This improves Wi-Fi stability when operating in cold temperature.
+
+Signed-off-by: Yuntian Zhang <yt@radxa.com>
+---
+ arch/arm64/boot/dts/amlogic/meson-g12a-radxa-zero.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/amlogic/meson-g12a-radxa-zero.dts b/arch/arm64/boot/dts/amlogic/meson-g12a-radxa-zero.dts
+index 8306caff5b3ed..59bb0361d3f60 100644
+--- a/arch/arm64/boot/dts/amlogic/meson-g12a-radxa-zero.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-g12a-radxa-zero.dts
+@@ -341,7 +341,7 @@
+ 	bus-width = <4>;
+ 	cap-sd-highspeed;
+ 	sd-uhs-sdr50;
+-	max-frequency = <100000000>;
++	max-frequency = <80000000>;
+ 
+ 	non-removable;
+ 	disable-wp;
