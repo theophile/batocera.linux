@@ -1,0 +1,75 @@
+From a6dae387cc1e543b05fe238e99da6df64abbe2b6 Mon Sep 17 00:00:00 2001
+From: theophile <chmeredith@gmail.com>
+Date: Wed, 5 Oct 2022 19:13:27 -0500
+Subject: [PATCH] dt overlays: add ADS1015 overlay
+
+---
+ arch/arm64/boot/dts/amlogic/overlay/Makefile  |  3 +-
+ .../amlogic/overlay/meson-g12a-ads1015.dts    | 44 +++++++++++++++++++
+ 2 files changed, 46 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/amlogic/overlay/meson-g12a-ads1015.dts
+
+diff --git a/arch/arm64/boot/dts/amlogic/overlay/Makefile b/arch/arm64/boot/dts/amlogic/overlay/Makefile
+index f63d81950df3d..bae00e0c9d7d3 100644
+--- a/arch/arm64/boot/dts/amlogic/overlay/Makefile
++++ b/arch/arm64/boot/dts/amlogic/overlay/Makefile
+@@ -27,7 +27,8 @@ dtbo-$(CONFIG_ARCH_MESON) += \
+ 	meson-g12b-uart-ao-b-gpioao-8-9.dtbo \
+ 	meson-g12b-uart-ee-c-gpioh-4-5-6-7.dtbo \
+ 	meson-g12a-gpio-poweroff.dtbo \
+-	meson-g12a-gpio-shutdown.dtbo
++	meson-g12a-gpio-shutdown.dtbo \
++	meson-g12a-ads1015.dtbo
+ 
+ scr-$(CONFIG_ARCH_MESON) += \
+ 	meson-fixup.scr
+diff --git a/arch/arm64/boot/dts/amlogic/overlay/meson-g12a-ads1015.dts b/arch/arm64/boot/dts/amlogic/overlay/meson-g12a-ads1015.dts
+new file mode 100644
+index 0000000000000..a03f5e26f4b0f
+--- /dev/null
++++ b/arch/arm64/boot/dts/amlogic/overlay/meson-g12a-ads1015.dts
+@@ -0,0 +1,44 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++compatible = "radxa,zero", "amlogic,g12a";
++
++/* ----------- ADS1015 ------------ */
++        fragment@0 {
++                target = <&i2c3>;
++                __overlay__ {
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++                        status = "okay";
++                        ads1015: ads1015 {
++                                compatible = "ti,ads1015";
++                                status = "okay";
++                                #address-cells = <1>;
++                                #size-cells = <0>;
++                                #io-channel-cells = <1>;
++                                reg = <0x48>;
++                                channel@1 {
++                                        reg = <4>;
++                                        ti,gain = <2>;
++                                        ti,datarate = <2>;
++                                };
++                                channel@2 {
++                                        reg = <5>;
++                                        ti,gain = <0>;
++                                        ti,datarate = <4>;
++                                };
++                                channel@3 {
++                                        reg = <6>;
++                                        ti,gain = <0>;
++                                        ti,datarate = <4>;
++                                };
++                                channel@4 {
++                                        reg = <7>;
++                                        ti,gain = <0>;
++                                        ti,datarate = <4>;
++                                };
++                        };
++                };
++        };
++};
