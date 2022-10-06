@@ -14,16 +14,16 @@ diff --git a/arch/arm64/boot/dts/amlogic/overlay/Makefile b/arch/arm64/boot/dts/
 index 45e47631ec9dd..f63d81950df3d 100644
 --- a/arch/arm64/boot/dts/amlogic/overlay/Makefile
 +++ b/arch/arm64/boot/dts/amlogic/overlay/Makefile
-@@ -26,7 +26,8 @@ dtbo-$(CONFIG_ARCH_MESON) += \
- 	meson-g12b-uart-ao-a-gpioao-0-1.dtbo \
- 	meson-g12b-uart-ao-b-gpioao-8-9.dtbo \
- 	meson-g12b-uart-ee-c-gpioh-4-5-6-7.dtbo \
+@@ -12,7 +12,8 @@ dtbo-$(CONFIG_ARCH_MESON) += \
+ 	meson-g12a-uart-ao-b-on-gpioao-8-gpioao-9.dtbo \
+ 	meson-g12a-uart-ee-c.dtbo \
+ 	meson-g12a-w1-gpioao-3.dtbo \
 -	meson-g12a-gpio-poweroff.dtbo
 +	meson-g12a-gpio-poweroff.dtbo \
 +	meson-g12a-gpio-shutdown.dtbo
  
  scr-$(CONFIG_ARCH_MESON) += \
- 	meson-fixup.scr
+        meson-fixup.scr
 diff --git a/arch/arm64/boot/dts/amlogic/overlay/meson-g12a-gpio-shutdown.dts b/arch/arm64/boot/dts/amlogic/overlay/meson-g12a-gpio-shutdown.dts
 new file mode 100644
 index 0000000000000..855cf119e5942
